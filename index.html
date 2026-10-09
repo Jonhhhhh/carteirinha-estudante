@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carteirinha do Estudante - Celso Lisboa</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Montserrat (for Celso Lisboa logo and Carteirinha title) + Inter (for student data) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- QRCode.js Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- html2canvas for instant export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #0b1120;
+    }
+
+    /* Brand typography styles */
+    .font-brand-logo {
+      font-family: 'Montserrat', sans-serif;
+      letter-spacing: -0.035em;
+    }
+    .font-brand-title {
+      font-family: 'Montserrat', system-ui, sans-serif;
+    }
+
+    /* Print styles */
+    @media print {
+      body {
+        background: transparent !important;
+        padding: 0 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      #card-viewport {
+        box-shadow: none !important;
+        margin: 0 auto !important;
+        transform: scale(1) !important;
+      }
+    }
+
+    /* Inline editable cue effects */
+    .editable-text:hover:not(.preview-mode) {
+      outline: 1.5px dashed #0284c7;
+      background-color: rgba(2, 132, 199, 0.06);
+      border-radius: 2px;
+      cursor: text;
+    }
+    .editable-text:focus {
+      outline: 2px solid #005a9c !important;
+      background-color: rgba(0, 90, 156, 0.08) !important;
+      border-radius: 2px;
+    }
+    .preview-mode {
+      outline: none !important;
+      background: transparent !important;
+      cursor: default !important;
+    }
+
+    /* Custom scrollbar for control drawer */
+    .custom-scroll::-webkit-scrollbar {
+      width: 5px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-900 flex flex-col items-center py-6 px-3 sm:px-6">
+
+  <!-- Top Action & Navigation Bar -->
+  <header class="w-full max-w-5xl flex flex-wrap items-center justify-between gap-3 mb-6 bg-slate-900/90 backdrop-blur-md p-3.5 sm:p-4 rounded-2xl border border-slate-800 shadow-xl no-print text-white">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#005a9c] to-[#0284c7] flex items-center justify-center font-black text-white text-base shadow-md font-brand-logo">
+        CL
+      </div>
+      <div>
+        <h1 class="text-sm sm:text-base font-bold leading-tight flex items-center gap-2">
+          Carteirinha Digital Celso Lisboa
+          <span class="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded-full font-mono uppercase font-semibold">100% Editável</span>
+        </h1>
+        <p class="text-xs text-slate-400">Clique diretamente nos textos para editar ou use o painel lateral</p>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex items-center flex-wrap gap-2 text-xs sm:text-sm">
+      <button id="toggle-panel-btn" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition flex items-center gap-1.5 font-medium border border-slate-700 text-slate-200">
+        <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+        <span>Painel de Dados</span>
+      </button>
+
+      <button id="preview-mode-btn" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition flex items-center gap-1.5 font-medium border border-slate-700 text-slate-200">
+        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.264 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+        <span id="preview-btn-text">Visualização Limpa</span>
+      </button>
+
+      <button id="download-btn" class="px-3.5 py-2 rounded-lg bg-[#005a9c] hover:bg-[#004a82] transition text-white flex items-center gap-1.5 font-semibold shadow-md shadow-sky-950/50">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+        <span>Baixar Imagem</span>
+      </button>
+
+      <button id="print-btn" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition text-slate-200 border border-slate-700 flex items-center gap-1.5 font-medium">
+        <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+        <span>Imprimir</span>
+      </button>
+
+      <button id="reset-btn" class="px-3 py-2 rounded-lg bg-rose-950/70 hover:bg-rose-900 transition text-rose-300 border border-rose-800/60 flex items-center gap-1" title="Restaurar dados originais">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="w-full max-w-5xl flex flex-col lg:flex-row items-center lg:items-start justify-center gap-8 mb-12">
+    
+    <!-- ======================================================== -->
+    <!-- PIXEL-PERFECT REPLICA OF CELSO LISBOA STUDENT ID CARD    -->
+    <!-- ======================================================== -->
+    <div id="card-viewport" class="relative w-[375px] sm:w-[395px] h-[790px] bg-white rounded-none shadow-[0_25px_60px_rgba(0,0,0,0.5)] overflow-hidden border border-slate-300 flex flex-col justify-between select-text transition-all duration-200">
+      
+      <!-- Top Decorative Vector Graphic Header matching the exact banner reference -->
+      <div class="relative w-full h-[220px] overflow-hidden select-none bg-[#004e82]">
+        
+        <!-- SVG Vector Shapes: Blue faceted gradients + Curved Yellow ribbon -->
+        <svg viewBox="0 0 395 220" class="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="mainBlue" x1="0%" y1="0%" x2="100%" y2="80%">
+              <stop offset="0%" stop-color="#00528e" />
+              <stop offset="40%" stop-color="#00477e" />
+              <stop offset="100%" stop-color="#003561" />
+            </linearGradient>
+            <!-- Facet overlay replicating diagonal light shards in original header -->
+            <linearGradient id="facetShade1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#026cb5" stop-opacity="0.8" />
+              <stop offset="100%" stop-color="#003158" stop-opacity="0" />
+            </linearGradient>
+            <linearGradient id="facetShade2" x1="100%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#002b4d" stop-opacity="0.6" />
+              <stop offset="100%" stop-color="#00477e" stop-opacity="0" />
+            </linearGradient>
+            <linearGradient id="yellowGrad" x1="0%" y1="50%" x2="100%" y2="50%">
+              <stop offset="0%" stop-color="#f2d00d" />
+              <stop offset="100%" stop-color="#ffd800" />
+            </linearGradient>
+          </defs>
+
+          <!-- White Base -->
+          <rect width="395" height="220" fill="#ffffff" />
+
+          <!-- Dynamic Yellow Band Flowing Across the Card -->
+          <path d="M -10,230 
+                   C 35,178 120,135 398,115 
+                   L 398,88 
+                   C 135,110 45,152 -10,195 Z" 
+                fill="url(#yellowGrad)" />
+
+          <!-- Deep Blue Upper Section Curve -->
+          <path d="M -10,-10 
+                   L 405,-10 
+                   L 405,100 
+                   C 230,102 95,145 -10,205 Z" 
+                fill="url(#mainBlue)" />
+
+          <!-- Geometric facet shapes on the blue zone -->
+          <polygon points="-10,-10 180,-10 90,140 -10,190" fill="url(#facetShade1)" />
+          <polygon points="170,-10 405,-10 405,80 180,60" fill="url(#facetShade2)" />
+        </svg>
+
+        <!-- HEADER CONTENT: CELSO LISBOA (Left) and Carteirinha do Estudante (Right) -->
+        <div class="relative z-10 w-full pt-6 px-6 flex items-start justify-between text-white">
+          
+          <!-- CELSO LISBOA Logo Group (Strictly matched typography) -->
+          <div class="flex flex-col select-none leading-none pt-0.5">
+            <span class="editable-text font-brand-logo font-black text-[24px] tracking-tight uppercase leading-[0.92]" contenteditable="true" id="txt-org-1" spellcheck="false">CELSO</span>
+            <span class="editable-text font-brand-logo font-black text-[24px] tracking-tight uppercase leading-[0.92]" contenteditable="true" id="txt-org-2" spellcheck="false">LISBOA</span>
+            <span class="editable-text text-[9px] font-normal tracking-tight text-white/95 mt-1.5 font-brand-logo font-medium" contenteditable="true" id="txt-org-sub" spellcheck="false">Centro Universitário</span>
+          </div>
+
+          <!-- Carteirinha do Estudante Group (Left-aligned between both lines, Bold + Ultra Light) -->
+          <div class="flex flex-col text-left select-none pl-3 pt-0.5 font-brand-title">
+            <span class="editable-text text-[26px] font-extrabold tracking-[-0.03em] leading-tight text-white" contenteditable="true" id="txt-header-title1" spellcheck="false">Carteirinha</span>
+            <span class="editable-text text-[24.5px] font-light tracking-[-0.02em] text-white leading-none mt-0.5" contenteditable="true" id="txt-header-title2" spellcheck="false">do Estudante</span>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- STUDENT CIRCULAR PHOTO: Positioned on the Right, overlapping header boundary -->
+      <div class="relative w-full px-6 -mt-16 flex justify-end z-20">
+        <div class="relative group">
+          <!-- Circular Frame with Dark Blue Rim -->
+          <div class="w-[144px] h-[144px] rounded-full border-[6.5px] border-[#005a9c] overflow-hidden bg-slate-200 shadow-md relative flex items-center justify-center">
+            <img id="student-photo-img" 
+                 src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=400&w=400&q=80" 
+                 alt="Foto do Estudante" 
+                 class="w-full h-full object-cover select-none pointer-events-none">
+            <input type="file" id="card-photo-input" accept="image/*" class="hidden">
+          </div>
+
+          <!-- Round Blue Camera Button at bottom center of the circular photo -->
+          <button id="camera-badge-btn" 
+                  class="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-[#005a9c] hover:bg-[#004a82] text-white flex items-center justify-center shadow-md border-2 border-white transition transform active:scale-90"
+                  title="Clique para alterar a foto do estudante">
+            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+              <path d="M12 9c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zm0 4.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/>
+              <path d="M20 5h-3.17l-1.24-1.35A1.99 1.99 0 0014.12 3H9.88c-.56 0-1.1.24-1.48.65L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 14H4V7h4.05l1.42-1.55c.13-.14.31-.22.5-.22h4.06c.19 0 .37.08.5.22L15.95 7H20v12z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- DATA FIELDS SECTION (Identical Spacing and Structure) -->
+      <div class="px-6 pt-3 flex-1 flex flex-col justify-start">
+        
+        <!-- Field 1: Nome -->
+        <div class="mb-3.5">
+          <div class="editable-text text-[14px] text-[#1e293b] font-normal leading-tight" contenteditable="true" id="lbl-nome">Nome:</div>
+          <div class="editable-text text-[17.5px] font-medium text-black leading-snug tracking-tight mt-0.5" contenteditable="true" id="val-nome" spellcheck="false">
+            Gabrielle Carvalho Ribeiro
+          </div>
+        </div>
+
+        <!-- Row 1: CPF (Left) & Nascimento (Right) -->
+        <div class="grid grid-cols-2 gap-x-4 mb-3.5 items-start">
+          <!-- CPF -->
+          <div>
+            <div class="editable-text text-[14px] text-[#1e293b] font-normal leading-tight" contenteditable="true" id="lbl-cpf">CPF:</div>
+            <div class="editable-text text-[16px] font-medium text-black tracking-tight mt-0.5" contenteditable="true" id="val-cpf" spellcheck="false">
+              192.351.797-00
+            </div>
+          </div>
+          <!-- Nascimento -->
+          <div>
+            <div class="editable-text text-[14px] text-[#1e293b] font-normal leading-tight" contenteditable="true" id="lbl-nascimento">Nascimento:</div>
+            <div class="editable-text text-[16px] font-medium text-black tracking-tight mt-0.5" contenteditable="true" id="val-nascimento" spellcheck="false">
+              28/11/2001
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 2: Curso (Left) -->
+        <div class="grid grid-cols-2 gap-x-4 mb-3.5 items-start">
+          <div>
+            <div class="editable-text text-[14px] text-[#1e293b] font-normal leading-tight" contenteditable="true" id="lbl-curso">Curso:</div>
+            <div class="editable-text text-[15.5px] font-medium text-black tracking-wide uppercase mt-0.5" contenteditable="true" id="val-curso" spellcheck="false">
+              ADMINISTRAÇÃO
+            </div>
+          </div>
+          <!-- Right column blank as in original image -->
+          <div></div>
+        </div>
+
+        <!-- Row 3: Matrícula (Left) & Validade (Right) -->
+        <div class="grid grid-cols-2 gap-x-4 mb-3.5 items-start">
+          <!-- Matrícula -->
+          <div>
+            <div class="editable-text text-[14px] text-[#1e293b] font-normal leading-tight" contenteditable="true" id="lbl-matricula">Matrícula:</div>
+            <div class="editable-text text-[16px] font-medium text-black tracking-tight mt-0.5" contenteditable="true" id="val-matricula" spellcheck="false">
+              201500089
+            </div>
+          </div>
+          <!-- Validade -->
+          <div>
+            <div class="editable-text text-[14px] text-[#1e293b] font-normal leading-tight" contenteditable="true" id="lbl-validade">Validade:</div>
+            <div class="editable-text text-[16px] font-medium text-black tracking-tight mt-0.5" contenteditable="true" id="val-validade" spellcheck="false">
+              21/12/2025
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- BOTTOM SECTION: QR Code on the Left, Validação Digital below QR Code, and Footer Disclaimer -->
+      <div class="px-6 pb-4 pt-1">
+        
+        <!-- Left-aligned Container for QR Code & "Validação Digital" -->
+        <div class="flex flex-col items-start w-[140px]">
+          <!-- QR Code Canvas Display Box -->
+          <div class="bg-white p-0.5 border border-slate-100 rounded-sm shadow-xs">
+            <div id="qrcode-box" class="w-[125px] h-[125px] flex items-center justify-center"></div>
+          </div>
+
+          <!-- Validação Digital label (centered directly under QR code) -->
+          <div class="w-full text-center mt-2.5">
+            <span class="editable-text text-[14px] font-medium text-black tracking-tight inline-block" contenteditable="true" id="val-validacao" spellcheck="false">
+              Validação Digital
+            </span>
+          </div>
+        </div>
+
+        <!-- Bottom Centered Footer Disclaimer -->
+        <div class="w-full text-center mt-3 pt-1 border-t border-transparent">
+          <p class="editable-text text-[10.5px] sm:text-[11px] text-[#1e293b] tracking-tight leading-tight select-text inline-block" contenteditable="true" id="val-disclaimer" spellcheck="false">
+            Carteirinha válida mediante apresentação de Documento com Foto.
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- SIDE PANEL / FLOATING FORM DRAWER -->
+    <aside id="side-drawer" class="w-full max-w-[390px] bg-slate-900 border border-slate-800 rounded-2xl p-5 text-slate-200 shadow-2xl space-y-4 no-print custom-scroll max-h-[790px] overflow-y-auto">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h2 class="font-bold text-sm sm:text-base text-white flex items-center gap-2">
+          <svg class="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+          Editor de Campos
+        </h2>
+        <span class="text-[11px] bg-sky-950 text-sky-300 font-mono px-2 py-0.5 rounded-full border border-sky-800">Auto-Sync</span>
+      </div>
+
+      <!-- Quick Upload Picture button in drawer -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-400 mb-1.5">Foto do Estudante</label>
+        <button type="button" id="side-photo-trigger" class="w-full py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-sky-300 border border-slate-700 flex items-center justify-center gap-2 transition active:scale-95">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          Trocar Imagem do Estudante
+        </button>
+      </div>
+
+      <!-- Form Inputs matching fields -->
+      <div>
+        <label for="form-nome" class="block text-xs font-semibold text-slate-400 mb-1">Nome Completo</label>
+        <input type="text" id="form-nome" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-sky-500" value="Gabrielle Carvalho Ribeiro">
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label for="form-cpf" class="block text-xs font-semibold text-slate-400 mb-1">CPF</label>
+          <input type="text" id="form-cpf" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-sky-500" value="192.351.797-00">
+        </div>
+        <div>
+          <label for="form-nascimento" class="block text-xs font-semibold text-slate-400 mb-1">Nascimento</label>
+          <input type="text" id="form-nascimento" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-sky-500" value="28/11/2001">
+        </div>
+      </div>
+
+      <div>
+        <label for="form-curso" class="block text-xs font-semibold text-slate-400 mb-1">Curso</label>
+        <input type="text" id="form-curso" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-sky-500 uppercase" value="ADMINISTRAÇÃO">
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label for="form-matricula" class="block text-xs font-semibold text-slate-400 mb-1">Matrícula</label>
+          <input type="text" id="form-matricula" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-sky-500" value="201500089">
+        </div>
+        <div>
+          <label for="form-validade" class="block text-xs font-semibold text-slate-400 mb-1">Validade</label>
+          <input type="text" id="form-validade" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-sky-500" value="21/12/2025">
+        </div>
+      </div>
+
+      <!-- QR Code String -->
+      <div class="pt-2 border-t border-slate-800">
+        <label for="form-qr" class="block text-xs font-semibold text-slate-400 mb-1">Conteúdo do QR Code</label>
+        <textarea id="form-qr" rows="2" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-sky-500 resize-none font-mono">https://celsolisboa.edu.br/carteirinha/valida?id=201500089&cpf=19235179700</textarea>
+        <span class="text-[10.5px] text-slate-500 block mt-0.5">O QR Code é atualizado instantaneamente ao digitar.</span>
+      </div>
+
+      <div>
+        <label for="form-disclaimer" class="block text-xs font-semibold text-slate-400 mb-1">Texto de Rodapé</label>
+        <input type="text" id="form-disclaimer" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-sky-500" value="Carteirinha válida mediante apresentação de Documento com Foto.">
+      </div>
+
+      <!-- Status Notification Message -->
+      <div id="toast-notification" class="hidden text-xs p-2.5 rounded-lg bg-emerald-950 border border-emerald-800 text-emerald-300 font-medium"></div>
+
+    </aside>
+
+  </main>
+
+  <script>
+    // Initial exact state definition
+    const INITIAL_STATE = {
+      org1: 'CELSO',
+      org2: 'LISBOA',
+      orgSub: 'Centro Universitário',
+      title1: 'Carteirinha',
+      title2: 'do Estudante',
+      nome: 'Gabrielle Carvalho Ribeiro',
+      cpf: '192.351.797-00',
+      nascimento: '28/11/2001',
+      curso: 'ADMINISTRAÇÃO',
+      matricula: '201500089',
+      validade: '21/12/2025',
+      validacao: 'Validação Digital',
+      disclaimer: 'Carteirinha válida mediante apresentação de Documento com Foto.',
+      qrPayload: 'https://celsolisboa.edu.br/carteirinha/valida?id=201500089&cpf=19235179700',
+      photoUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=400&w=400&q=80'
+    };
+
+    // DOM Elements Mapping
+    const dom = {
+      // Header brand elements
+      txtOrg1: document.getElementById('txt-org-1'),
+      txtOrg2: document.getElementById('txt-org-2'),
+      txtOrgSub: document.getElementById('txt-org-sub'),
+      txtHeaderTitle1: document.getElementById('txt-header-title1'),
+      txtHeaderTitle2: document.getElementById('txt-header-title2'),
+
+      // Inline Card Elements
+      valNome: document.getElementById('val-nome'),
+      valCpf: document.getElementById('val-cpf'),
+      valNascimento: document.getElementById('val-nascimento'),
+      valCurso: document.getElementById('val-curso'),
+      valMatricula: document.getElementById('val-matricula'),
+      valValidade: document.getElementById('val-validade'),
+      valValidacao: document.getElementById('val-validacao'),
+      valDisclaimer: document.getElementById('val-disclaimer'),
+
+      // Side Form Inputs
+      formNome: document.getElementById('form-nome'),
+      formCpf: document.getElementById('form-cpf'),
+      formNascimento: document.getElementById('form-nascimento'),
+      formCurso: document.getElementById('form-curso'),
+      formMatricula: document.getElementById('form-matricula'),
+      formValidade: document.getElementById('form-validade'),
+      formQr: document.getElementById('form-qr'),
+      formDisclaimer: document.getElementById('form-disclaimer'),
+
+      // Photo Elements
+      studentPhotoImg: document.getElementById('student-photo-img'),
+      cardPhotoInput: document.getElementById('card-photo-input'),
+      cameraBadgeBtn: document.getElementById('camera-badge-btn'),
+      sidePhotoTrigger: document.getElementById('side-photo-trigger'),
+
+      // QR Code Container
+      qrcodeBox: document.getElementById('qrcode-box'),
+
+      // Containers & Buttons
+      cardViewport: document.getElementById('card-viewport'),
+      sideDrawer: document.getElementById('side-drawer'),
+      togglePanelBtn: document.getElementById('toggle-panel-btn'),
+      previewModeBtn: document.getElementById('preview-mode-btn'),
+      previewBtnText: document.getElementById('preview-btn-text'),
+      downloadBtn: document.getElementById('download-btn'),
+      printBtn: document.getElementById('print-btn'),
+      resetBtn: document.getElementById('reset-btn'),
+      toastNotification: document.getElementById('toast-notification')
+    };
+
+    let qrCodeGenerator = null;
+    let isPreviewModeActive = false;
+
+    // Toast Notification helper
+    function showNotification(msg, isError = false) {
+      dom.toastNotification.textContent = msg;
+      dom.toastNotification.className = `text-xs p-2.5 rounded-lg border font-medium ${
+        isError ? 'bg-rose-950 border-rose-800 text-rose-300' : 'bg-emerald-950 border-emerald-800 text-emerald-300'
+      }`;
+      dom.toastNotification.classList.remove('hidden');
+      setTimeout(() => {
+        dom.toastNotification.classList.add('hidden');
+      }, 3500);
+    }
+
+    // QR Code Render Function
+    function renderQrCode(text) {
+      try {
+        dom.qrcodeBox.innerHTML = '';
+        qrCodeGenerator = new QRCode(dom.qrcodeBox, {
+          text: text || 'https://celsolisboa.edu.br',
+          width: 120,
+          height: 120,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch (err) {
+        console.error('Falha ao renderizar QR Code:', err);
+      }
+    }
+
+    // Two-way synchronization helper
+    function syncField(inlineEl, inputEl) {
+      if (!inlineEl || !inputEl) return;
+
+      inlineEl.addEventListener('input', () => {
+        if (inputEl.value !== inlineEl.innerText.trim()) {
+          inputEl.value = inlineEl.innerText.trim();
+        }
+      });
+
+      inputEl.addEventListener('input', () => {
+        if (inlineEl.innerText !== inputEl.value) {
+          inlineEl.innerText = inputEl.value;
+        }
+      });
+    }
+
+    // Connect editable pairs
+    syncField(dom.valNome, dom.formNome);
+    syncField(dom.valCpf, dom.formCpf);
+    syncField(dom.valNascimento, dom.formNascimento);
+    syncField(dom.valCurso, dom.formCurso);
+    syncField(dom.valMatricula, dom.formMatricula);
+    syncField(dom.valValidade, dom.formValidade);
+    syncField(dom.valDisclaimer, dom.formDisclaimer);
+
+    // Dynamic QR update on input
+    dom.formQr.addEventListener('input', () => {
+      renderQrCode(dom.formQr.value);
+    });
+
+    // Image Upload Handlers
+    function triggerPhotoSelection() {
+      dom.cardPhotoInput.click();
+    }
+    dom.cameraBadgeBtn.addEventListener('click', triggerPhotoSelection);
+    dom.sidePhotoTrigger.addEventListener('click', triggerPhotoSelection);
+
+    dom.cardPhotoInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (file) {
+        if (!file.type.startsWith('image/')) {
+          showNotification('Selecione um arquivo de imagem válido.', true);
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          dom.studentPhotoImg.src = evt.target.result;
+          showNotification('Foto do estudante atualizada com sucesso!');
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Toggle Sidebar Drawer
+    dom.togglePanelBtn.addEventListener('click', () => {
+      dom.sideDrawer.classList.toggle('hidden');
+    });
+
+    // Toggle Clean Preview Mode
+    dom.previewModeBtn.addEventListener('click', () => {
+      isPreviewModeActive = !isPreviewModeActive;
+      const editables = document.querySelectorAll('.editable-text');
+
+      if (isPreviewModeActive) {
+        editables.forEach(el => {
+          el.setAttribute('contenteditable', 'false');
+          el.classList.add('preview-mode');
+        });
+        dom.cameraBadgeBtn.classList.add('opacity-0', 'pointer-events-none');
+        dom.previewBtnText.textContent = 'Habilitar Edição';
+        showNotification('Modo visualização ativado. Bordas e botões ocultos.');
+      } else {
+        editables.forEach(el => {
+          el.setAttribute('contenteditable', 'true');
+          el.classList.remove('preview-mode');
+        });
+        dom.cameraBadgeBtn.classList.remove('opacity-0', 'pointer-events-none');
+        dom.previewBtnText.textContent = 'Visualização Limpa';
+        showNotification('Modo edição reativado. Clique em qualquer texto para editar.');
+      }
+    });
+
+    // Reset button functionality
+    dom.resetBtn.addEventListener('click', () => {
+      dom.txtOrg1.innerText = INITIAL_STATE.org1;
+      dom.txtOrg2.innerText = INITIAL_STATE.org2;
+      dom.txtOrgSub.innerText = INITIAL_STATE.orgSub;
+      dom.txtHeaderTitle1.innerText = INITIAL_STATE.title1;
+      dom.txtHeaderTitle2.innerText = INITIAL_STATE.title2;
+
+      dom.valNome.innerText = INITIAL_STATE.nome;
+      dom.formNome.value = INITIAL_STATE.nome;
+
+      dom.valCpf.innerText = INITIAL_STATE.cpf;
+      dom.formCpf.value = INITIAL_STATE.cpf;
+
+      dom.valNascimento.innerText = INITIAL_STATE.nascimento;
+      dom.formNascimento.value = INITIAL_STATE.nascimento;
+
+      dom.valCurso.innerText = INITIAL_STATE.curso;
+      dom.formCurso.value = INITIAL_STATE.curso;
+
+      dom.valMatricula.innerText = INITIAL_STATE.matricula;
+      dom.formMatricula.value = INITIAL_STATE.matricula;
+
+      dom.valValidade.innerText = INITIAL_STATE.validade;
+      dom.formValidade.value = INITIAL_STATE.validade;
+
+      dom.valValidacao.innerText = INITIAL_STATE.validacao;
+
+      dom.valDisclaimer.innerText = INITIAL_STATE.disclaimer;
+      dom.formDisclaimer.value = INITIAL_STATE.disclaimer;
+
+      dom.formQr.value = INITIAL_STATE.qrPayload;
+      renderQrCode(INITIAL_STATE.qrPayload);
+
+      dom.studentPhotoImg.src = INITIAL_STATE.photoUrl;
+      showNotification('Todos os campos foram restaurados ao padrão original!');
+    });
+
+    // Print
+    dom.printBtn.addEventListener('click', () => {
+      window.print();
+    });
+
+    // High resolution PNG download
+    dom.downloadBtn.addEventListener('click', () => {
+      showNotification('Gerando arquivo PNG de alta qualidade...');
+      
+      const originalDisplay = dom.cameraBadgeBtn.style.display;
+      dom.cameraBadgeBtn.style.display = 'none';
+
+      html2canvas(dom.cardViewport, {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: '#ffffff'
+      }).then(canvas => {
+        dom.cameraBadgeBtn.style.display = originalDisplay;
+        const link = document.createElement('a');
+        link.download = `carteirinha-celso-lisboa-${dom.formMatricula.value || 'estudante'}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        showNotification('Carteirinha baixada com sucesso!');
+      }).catch(err => {
+        dom.cameraBadgeBtn.style.display = originalDisplay;
+        console.error('Erro na exportação:', err);
+        showNotification('Falha ao exportar imagem.', true);
+      });
+    });
+
+    // Initialize QR Code on DOM ready
+    window.addEventListener('DOMContentLoaded', () => {
+      renderQrCode(INITIAL_STATE.qrPayload);
+    });
+  </script>
+</body>
+</html>
